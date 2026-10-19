@@ -53,10 +53,8 @@ export default {
         incoming.gmvCurrency !== "BRL") return reply(400, { error: "Informe o GMV em reais, com até duas casas decimais." });
     metrics.gmv = incoming.gmv;
     metrics.gmvCurrency = "BRL";
-    const token = process.env.AI_GATEWAY_API_KEY ||
-      (process.env.VERCEL === "1" ? request.headers.get("x-vercel-oidc-token") : null) ||
-      process.env.VERCEL_OIDC_TOKEN;
-    if (!token) return reply(503, { error: "A IA ainda precisa ser habilitada pelo administrador na Vercel. Você pode escrever o resumo manualmente." });
+    const token = process.env.GROQ_API_KEY?.trim();
+    if (!token) return reply(503, { error: "O administrador precisa configurar a chave da Groq na Vercel. Você pode escrever o resumo manualmente." });
     const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     if (!takeSlot(ip)) return reply(429, { error: "Limite temporário de gerações atingido. Aguarde alguns minutos ou escreva o resumo manualmente." }, { "Retry-After": "600" });
     const percentage = (a, b) => b > 0 ? Math.round(a / b * 10000) / 100 : null;
@@ -79,12 +77,14 @@ export default {
       "Apresente possíveis gargalos e hipóteses com cautela, nunca como causa comprovada ou promessa de resultado. Se todos os números forem zero, diga que não há resultado mensurável e recomende conferir a coleta antes de otimizar."
     ].join(" ");
     try {
-      const upstream = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+      const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: process.env.AI_GATEWAY_MODEL || "google/gemini-3.1-flash-lite",
-          max_tokens: 1800,
+          model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+          max_completion_tokens: 2400,
+          include_reasoning: false,
+          reasoning_effort: "low",
           messages: [{ role: "system", content: instructions }, { role: "user", content: JSON.stringify({ metrics, taxasCalculadas: rates }) }]
         }),
         signal: AbortSignal.timeout(28000)
@@ -93,8 +93,10 @@ export default {
         const adminIssue = [401, 402, 403].includes(upstream.status);
         return reply(adminIssue ? 503 : upstream.status === 429 ? 429 : 502, {
           error: adminIssue
-            ? "A IA está indisponível. O administrador precisa conferir a habilitação e os créditos do AI Gateway na Vercel. Você pode escrever manualmente."
-            : "Não foi possível gerar agora. Tente novamente em alguns minutos ou escreva seu resumo manualmente."
+            ? "A IA está indisponível. O administrador precisa conferir a chave e as permissões da Groq. Você pode escrever manualmente."
+            : upstream.status === 429
+              ? "O limite de uso da Groq foi atingido. Aguarde alguns minutos ou escreva o resumo manualmente."
+              : "Não foi possível gerar agora. Tente novamente em alguns minutos ou escreva seu resumo manualmente."
         });
       }
       const output = await upstream.json();

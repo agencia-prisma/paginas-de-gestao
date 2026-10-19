@@ -15,7 +15,7 @@ O cadastro é estático, compartilhado pela versão publicada e mantido por quem
 
 ## Publicação
 
-Sirva os quatro arquivos `index.html`, `styles.css`, `config.js` e `app.js` em qualquer hospedagem estática via HTTPS. Nenhum build é necessário para a interface. A geração de IA exige a função `api/summary.js` hospedada na Vercel; hospedagem puramente estática mantém o preenchimento manual. O repositório não habilita hospedagem automaticamente.
+Sirva os arquivos `index.html`, `styles.css`, `config.js`, `app.js` e `summary.js` em qualquer hospedagem estática via HTTPS. Nenhum build é necessário para a interface. A geração de IA exige a função `api/summary.js` hospedada na Vercel; hospedagem puramente estática mantém o preenchimento manual. O repositório não habilita hospedagem automaticamente.
 
 ## Webhook
 
@@ -42,18 +42,19 @@ O envio tem limite de 20 segundos e bloqueia cliques repetidos enquanto aguarda.
 
 O botão “Gerar análise com IA” usa os resultados preenchidos para sugerir um resumo, pontos de atenção e próximos testes. A sugestão aparece separada do resumo. “Usar sugestão no resumo” adiciona o texto sem apagar observações já escritas. A pessoa pode escrever do zero, editar e enviar manualmente pelo webhook existente. Gerar a análise nunca envia o relatório.
 
-Apenas as métricas são transmitidas ao AI Gateway; nomes de clientes e texto manual não são enviados à IA. Se as métricas, cliente ou data mudarem durante ou depois da geração, a sugestão fica inválida. A interface aceita o resumo editado como antes, em `additionalField.value`, sem mudar as chaves do webhook.
+Apenas as métricas são transmitidas diretamente à Groq; nomes de clientes e texto manual não são enviados à IA. Se as métricas, cliente ou data mudarem durante ou depois da geração, a sugestão fica inválida. A interface aceita o resumo editado como antes, em `additionalField.value`, sem mudar as chaves do webhook.
 
 ### Configuração na Vercel
 
 - Node.js 22 ou superior (projeto atual: 24).
-- OIDC da Vercel via cabeçalho `x-vercel-oidc-token` nas Functions e `VERCEL_OIDC_TOKEN` no desenvolvimento local. Alternativa para ambiente local: `AI_GATEWAY_API_KEY` em variável privada, nunca no `config.js`.
-- O AI Gateway precisa estar habilitado e ter acesso/créditos disponíveis na equipe. Não há compra automática de créditos neste projeto.
-- Modelo padrão verificado no catálogo: `google/gemini-3.1-flash-lite`, escolhido para geração curta com baixo custo. Pode ser alterado em `AI_GATEWAY_MODEL`.
-- Configure limites de gastos do AI Gateway no painel conforme o uso autorizado pela equipe. O endpoint é público, assim como o formulário; a checagem de origem não é autenticação.
-- Há limites temporários por instância (5 gerações/IP a cada 10 minutos, 100/hora por instância), payload de até 4 KB e geração limitada a 1.800 tokens/28 segundos. Esses limites não são distribuídos e reiniciam com a instância; não substituem orçamento do Gateway ou proteção de abuso na Vercel.
+- Configure `GROQ_API_KEY` como variável privada do servidor em Settings → Environment Variables na Vercel, para Production (e Preview se necessário). Após salvar, faça um novo deploy. Não use prefixos públicos nem coloque a chave em `config.js` ou no chat.
+- Gere a chave na [Groq Console](https://console.groq.com/keys). A função chama diretamente `https://api.groq.com/openai/v1/chat/completions`; não usa AI Gateway, créditos de IA ou tokens OIDC da Vercel.
+- Modelo padrão: `openai/gpt-oss-120b`, disponível no catálogo de produção e nos limites do plano gratuito da Groq na data da implementação. Configuração opcional `GROQ_MODEL`: use um modelo GPT-OSS compatível com `reasoning_effort: "low"` e `include_reasoning: false`, como `openai/gpt-oss-20b`.
+- O uso segue a cota e o plano da conta Groq. O código não altera o plano nem compra créditos. A hospedagem e a execução da função continuam sujeitas ao plano da Vercel.
+- O endpoint é público, assim como o formulário; a checagem de origem não é autenticação.
+- Há limites temporários por instância (5 gerações/IP a cada 10 minutos, 100/hora por instância), payload de até 4 KB e geração limitada a 2.400 tokens/28 segundos. Esses limites não são distribuídos e reiniciam com a instância; não substituem limites da conta Groq ou proteção de abuso na Vercel.
 - A função não armazena relatórios em banco. Contadores temporários ficam apenas em memória.
 
 ### Verificação da IA
 
-Verificar números válidos e zeros; contagens negativas/fracionárias; GMV com centavos; falha do Gateway/créditos; sugestão vazia; timeout; edição manual durante geração; alterações das métricas invalidando sugestão; uso da sugestão preservando texto manual e limite de 5.000 caracteres; envio final com o texto revisado.
+Verificar números válidos e zeros; contagens negativas/fracionárias; GMV com centavos; falha de autenticação/permissão da Groq e cota atingida; sugestão vazia; timeout; edição manual durante geração; alterações das métricas invalidando sugestão; uso da sugestão preservando texto manual e limite de 5.000 caracteres; envio final com o texto revisado.

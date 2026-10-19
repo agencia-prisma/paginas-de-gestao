@@ -5,10 +5,10 @@ import { readFile } from "node:fs/promises";
 const server = await readFile(new URL("../api/summary.js", import.meta.url), "utf8");
 const client = await readFile(new URL("../summary.js", import.meta.url), "utf8");
 const metrics = { interactions: 10, impressions: 100, views: 50, productClicks: 20, addToCart: 5, sales: 2, gmv: 123.45, gmvCurrency: "BRL" };
-function api(status = 200, content = "Resumo e melhorias.", env = { VERCEL_OIDC_TOKEN: "test-only" }) {
+function api(status = 200, content = "Resumo e melhorias.", env = { GROQ_API_KEY: "test-only" }) {
   const calls = [];
   const context = { Request, Response, URL, TextDecoder, Uint8Array, AbortSignal, process: { env },
-    fetch: async (url, options) => { calls.push(JSON.parse(options.body)); return Response.json({ choices: [{ message: { content }, finish_reason: "stop" }] }, { status }); }
+    fetch: async (url, options) => { assert.equal(url, "https://api.groq.com/openai/v1/chat/completions"); assert.equal(options.headers.Authorization, "Bearer " + env.GROQ_API_KEY.trim()); calls.push(JSON.parse(options.body)); return Response.json({ choices: [{ message: { content }, finish_reason: "stop" }] }, { status }); }
   };
   vm.runInNewContext(server.replace("export default {", "globalThis.handler = {"), context);
   return { calls, run: (body, origin = "https://example.com", extraHeaders = {}) => context.handler.fetch(new Request("https://example.com/api/summary", {
@@ -32,9 +32,13 @@ test("API rejects invalid metrics, other origins and oversized payloads before g
   assert.equal((await h.run({ metrics, padding: "x".repeat(4200) })).status, 413);
   assert.equal(h.calls.length, 0);
 });
-test("API handles unavailable credentials, credits and empty provider response", async () => {
+test("API handles unavailable credentials, denied access, rate limit and empty provider response", async () => {
   assert.equal((await api(200, "ok", {}).run({ metrics })).status, 503);
-  assert.equal((await api(402).run({ metrics })).status, 503);
+  assert.equal((await api(401).run({ metrics })).status, 503);
+  assert.equal((await api(403).run({ metrics })).status, 503);
+  const limited = await api(429).run({ metrics });
+  assert.equal(limited.status, 429);
+  assert.match((await limited.json()).error, /limite de uso da Groq/);
   assert.equal((await api(200, "").run({ metrics })).status, 502);
 });
 test("API limits repeated requests per instance", async () => {
@@ -98,7 +102,17 @@ test("failure preserves text; applying respects character limit", async () => {
   assert.equal(h.form.elements.additionalValue.value.length, 5000);
 });
 
-test("Vercel runtime authenticates using the platform request header", async () => {
-  const h = api(200, "ok", { VERCEL: "1" });
-  assert.equal((await h.run({ metrics }, "https://example.com", { "x-vercel-oidc-token": "test-platform-token" })).status, 200);
+test("Groq configuration never falls back to Vercel credentials", async () => {
+  const h = api(200, "ok", { VERCEL: "1", VERCEL_OIDC_TOKEN: "unused", AI_GATEWAY_API_KEY: "unused" });
+  const response = await h.run({ metrics }, "https://example.com", { "x-vercel-oidc-token": "unused" });
+  assert.equal(response.status, 503);
+  assert.equal(h.calls.length, 0);
+});
+test("Groq request uses configured model and excludes reasoning from output", async () => {
+  const h = api(200, "ok", { GROQ_API_KEY: "test-only", GROQ_MODEL: "openai/gpt-oss-20b" });
+  assert.equal((await h.run({ metrics })).status, 200);
+  assert.equal(h.calls[0].model, "openai/gpt-oss-20b");
+  assert.equal(h.calls[0].max_completion_tokens, 2400);
+  assert.equal(h.calls[0].include_reasoning, false);
+  assert.equal(h.calls[0].reasoning_effort, "low");
 });
