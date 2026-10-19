@@ -47,7 +47,7 @@ Apenas as métricas são transmitidas ao AI Gateway; nomes de clientes e texto m
 ### Configuração na Vercel
 
 - Node.js 22 ou superior (projeto atual: 24).
-- OIDC da Vercel via `VERCEL_OIDC_TOKEN`, disponível no servidor. Alternativa para ambiente local: `AI_GATEWAY_API_KEY` em variável privada, nunca no `config.js`.
+- OIDC da Vercel via cabeçalho `x-vercel-oidc-token` nas Functions e `VERCEL_OIDC_TOKEN` no desenvolvimento local. Alternativa para ambiente local: `AI_GATEWAY_API_KEY` em variável privada, nunca no `config.js`.
 - O AI Gateway precisa estar habilitado e ter acesso/créditos disponíveis na equipe. Não há compra automática de créditos neste projeto.
 - Modelo padrão verificado no catálogo: `google/gemini-3.1-flash-lite`, escolhido para geração curta com baixo custo. Pode ser alterado em `AI_GATEWAY_MODEL`.
 - Configure limites de gastos do AI Gateway no painel conforme o uso autorizado pela equipe. O endpoint é público, assim como o formulário; a checagem de origem não é autenticação.

@@ -53,7 +53,9 @@ export default {
         incoming.gmvCurrency !== "BRL") return reply(400, { error: "Informe o GMV em reais, com até duas casas decimais." });
     metrics.gmv = incoming.gmv;
     metrics.gmvCurrency = "BRL";
-    const token = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+    const token = process.env.AI_GATEWAY_API_KEY ||
+      (process.env.VERCEL === "1" ? request.headers.get("x-vercel-oidc-token") : null) ||
+      process.env.VERCEL_OIDC_TOKEN;
     if (!token) return reply(503, { error: "A IA ainda precisa ser habilitada pelo administrador na Vercel. Você pode escrever o resumo manualmente." });
     const ip = request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     if (!takeSlot(ip)) return reply(429, { error: "Limite temporário de gerações atingido. Aguarde alguns minutos ou escreva o resumo manualmente." }, { "Retry-After": "600" });

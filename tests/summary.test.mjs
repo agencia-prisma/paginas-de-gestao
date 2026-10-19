@@ -11,8 +11,8 @@ function api(status = 200, content = "Resumo e melhorias.", env = { VERCEL_OIDC_
     fetch: async (url, options) => { calls.push(JSON.parse(options.body)); return Response.json({ choices: [{ message: { content }, finish_reason: "stop" }] }, { status }); }
   };
   vm.runInNewContext(server.replace("export default {", "globalThis.handler = {"), context);
-  return { calls, run: (body, origin = "https://example.com") => context.handler.fetch(new Request("https://example.com/api/summary", {
-    method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body)
+  return { calls, run: (body, origin = "https://example.com", extraHeaders = {}) => context.handler.fetch(new Request("https://example.com/api/summary", {
+    method: "POST", headers: { origin, "content-type": "application/json", ...extraHeaders }, body: JSON.stringify(body)
   })) };
 }
 test("API returns summary and computes rates; zero denominators become null", async () => {
@@ -96,4 +96,9 @@ test("failure preserves text; applying respects character limit", async () => {
   h.form.elements.additionalValue.value = "x".repeat(5000);
   await h.click("apply-summary");
   assert.equal(h.form.elements.additionalValue.value.length, 5000);
+});
+
+test("Vercel runtime authenticates using the platform request header", async () => {
+  const h = api(200, "ok", { VERCEL: "1" });
+  assert.equal((await h.run({ metrics }, "https://example.com", { "x-vercel-oidc-token": "test-platform-token" })).status, 200);
 });
