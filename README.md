@@ -19,7 +19,9 @@ Sirva os quatro arquivos `index.html`, `styles.css`, `config.js` e `app.js` em q
 
 ## Webhook
 
-O navegador envia POST JSON com `schemaVersion`, `event`, `submittedAt` (UTC), `client: { id, name }`, `liveDate` (AAAA-MM-DD), `metrics: { interactions, sales, productClicks, views }` e `additionalField: { label, value }`.
+O navegador envia POST JSON com `schemaVersion`, `event`, `submittedAt` (UTC), `client: { id, name }`, `liveDate` (AAAA-MM-DD), `metrics: { interactions, sales, productClicks, views, impressions, addToCart, gmv, gmvCurrency }` e `additionalField: { label, value }`.
+
+`impressions` e `addToCart` são contagens inteiras não negativas. `gmv` é o valor bruto de vendas em reais (número JSON, por exemplo 1234.56), acompanhado de `gmvCurrency: "BRL"`. O formulário aceita ponto ou vírgula decimal, até duas casas e nenhum separador de milhar. Todos os resultados são obrigatórios; zero é aceito.
 
 O destino deve responder ao preflight OPTIONS permitindo a origem publicada, POST e o cabeçalho Content-Type, e incluir os cabeçalhos CORS também na resposta ao POST. Apenas respostas HTTP 2xx confirmam recebimento; isso não garante processamento posterior. Não se usa modo no-cors, pois ele impede confirmar a entrega.
 
@@ -31,7 +33,7 @@ O envio tem limite de 20 segundos e bloqueia cliques repetidos enquanto aguarda.
 
 1. Sem configuração, verificar aviso e envio desabilitado.
 2. Configurar clientes e um receptor de testes com CORS; verificar seleção e rótulo personalizado.
-3. Campos obrigatórios, negativos e fracionários devem impedir envio; zero deve ser aceito.
+3. Campos obrigatórios e negativos devem impedir envio; contagens fracionárias também. GMV deve aceitar 0, 1234,56 e 1234.56, rejeitando mais de duas casas decimais; zero deve ser aceito.
 4. Conferir um POST com os valores e cliente escolhidos, botão bloqueado durante envio e limpeza apenas após 2xx.
 5. Simular HTTP 500, falha de rede e timeout; verificar preservação dos campos e ausência de sucesso.
 6. Conferir navegação por teclado e layout em celular.
