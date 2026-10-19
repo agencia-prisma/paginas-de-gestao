@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrega de relatório de lives</title><link rel="stylesheet" href="styles.css"><script src="config.js" defer></script><script src="app.js" defer></script></head>
+<body><main>
+<header><span class="brand">PRISMA · GESTÃO</span><p class="eyebrow">RELATÓRIOS DE PERFORMANCE</p><h1>Como foi a sua live?</h1><p>Reúna os resultados e entregue o relatório para sua equipe.</p></header>
+<form id="report-form">
+<section aria-labelledby="details"><h2 id="details">01 · Identificação</h2><div class="grid">
+<label>Cliente<select name="clientId" id="client" required><option value="">Selecione um cliente</option></select></label>
+<label>Data da live<input type="date" name="liveDate" required></label>
+</div></section>
+<section aria-labelledby="metrics"><h2 id="metrics">02 · Resultados da live</h2><div class="grid">
+<label>Interações<input name="interactions" type="number" min="0" max="9007199254740991" step="1" placeholder="0" required></label>
+<label>Vendas<input name="sales" type="number" min="0" max="9007199254740991" step="1" placeholder="0" required></label>
+<label>Cliques no produto<input name="productClicks" type="number" min="0" max="9007199254740991" step="1" placeholder="0" required></label>
+<label>Visualizações<input name="views" type="number" min="0" max="9007199254740991" step="1" placeholder="0" required></label>
+</div></section>
+<section aria-labelledby="context"><h2 id="context">03 · Contexto</h2><label><span id="additional-label">Resumo da live</span><textarea name="additionalValue" rows="4" maxlength="5000" placeholder="Descreva os principais acontecimentos da live." required></textarea></label></section>
+<p id="configuration-status" role="status"></p>
+<div class="footer"><p>Confira os dados antes de enviar.</p><button type="submit" id="submit">Enviar relatório <span aria-hidden="true">↗</span></button></div>
+<p id="status" role="status" aria-live="polite"></p>
+</form><footer>Entrega direta para a equipe · Sem armazenamento de relatórios nesta página</footer>
+</main></body></html>
