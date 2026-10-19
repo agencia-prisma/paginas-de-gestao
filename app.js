@@ -32,7 +32,7 @@
     const data = new FormData(form);
     const client = clients.find(item => item && item.id === data.get("clientId") && ids.has(item.id));
     const metrics = {};
-    for (const key of ["interactions", "sales", "productClicks", "views"]) {
+    for (const key of ["interactions", "sales", "productClicks", "views", "impressions", "addToCart"]) {
       const value = Number(data.get(key));
       if (!Number.isSafeInteger(value) || value < 0) {
         status.textContent = "Preencha os resultados com números inteiros iguais ou maiores que zero.";
@@ -40,6 +40,19 @@
       }
       metrics[key] = value;
     }
+    const gmvText = String(data.get("gmv") || "").trim();
+    if (!/^\d+(?:[.,]\d{1,2})?$/.test(gmvText)) {
+      status.textContent = "Preencha o GMV em reais, com até duas casas decimais e valor igual ou maior que zero.";
+      return;
+    }
+    const [reais, centavos = ""] = gmvText.replace(",", ".").split(".");
+    const gmvInCents = Number(reais) * 100 + Number(centavos.padEnd(2, "0"));
+    if (!Number.isSafeInteger(gmvInCents) || gmvInCents < 0) {
+      status.textContent = "O valor do GMV está acima do limite permitido.";
+      return;
+    }
+    metrics.gmv = gmvInCents / 100;
+    metrics.gmvCurrency = "BRL";
     const additionalValue = String(data.get("additionalValue") || "").trim();
     if (!client || !additionalValue) {
       status.textContent = "Selecione um cliente e preencha o contexto da live.";
