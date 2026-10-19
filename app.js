@@ -28,7 +28,7 @@
   let sending = false;
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    if (!ready || sending || !form.reportValidity()) return;
+    if (!ready || sending || form.dataset.generating === "true" || !form.reportValidity()) return;
     const data = new FormData(form);
     const client = clients.find(item => item && item.id === data.get("clientId") && ids.has(item.id));
     const metrics = {};
@@ -66,6 +66,7 @@
       additionalField: { label, value: additionalValue }
     };
     sending = true;
+    form.dataset.sending = "true";
     submit.disabled = true;
     submit.textContent = "Enviando…";
     status.textContent = "Enviando relatório…";
@@ -85,6 +86,7 @@
     } finally {
       clearTimeout(timeout);
       sending = false;
+      form.dataset.sending = "false";
       submit.disabled = false;
       submit.innerHTML = 'Enviar relatório <span aria-hidden="true">↗</span>';
     }

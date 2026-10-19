@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrega de relatório de lives</title><link rel="stylesheet" href="styles.css"><script src="config.js" defer></script><script src="app.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrega de relatório de lives</title><link rel="stylesheet" href="styles.css"><script src="config.js" defer></script><script src="app.js" defer></script><script src="summary.js" defer></script></head>
 <body><main>
 <header><span class="brand">PRISMA · GESTÃO</span><p class="eyebrow">RELATÓRIOS DE PERFORMANCE</p><h1>Como foi a sua live?</h1><p>Reúna os resultados e entregue o relatório para sua equipe.</p></header>
 <form id="report-form">
@@ -17,7 +17,11 @@
 <label>Vendas<input name="sales" type="number" min="0" max="9007199254740991" step="1" placeholder="0" required></label>
 <label>GMV (R$)<input name="gmv" type="text" inputmode="decimal" pattern="[0-9]+([.,][0-9]{1,2})?" maxlength="17" placeholder="0,00" aria-describedby="gmv-help" required><small id="gmv-help">Valor bruto de vendas em reais. Ex.: 1234,56 (sem separador de milhar).</small></label>
 </div></section>
-<section aria-labelledby="context"><h2 id="context">03 · Contexto</h2><label><span id="additional-label">Resumo da live</span><textarea name="additionalValue" rows="4" maxlength="5000" placeholder="Descreva os principais acontecimentos da live." required></textarea></label></section>
+<section aria-labelledby="context"><h2 id="context">03 · Contexto</h2><label><span id="additional-label">Resumo da live</span><textarea name="additionalValue" rows="4" maxlength="5000" placeholder="Descreva os principais acontecimentos da live." required></textarea></label>
+<div class="ai-actions"><button type="button" id="generate-summary">Gerar análise com IA</button><p>Use os resultados preenchidos para sugerir um resumo e ações de melhoria. Você pode escrever e editar livremente antes de enviar.</p></div>
+<p id="ai-status" role="status" aria-live="polite"></p>
+<div id="ai-draft" hidden><h3>Sugestão da IA</h3><p id="ai-draft-text"></p><p class="ai-note">Revise os números e as recomendações. A geração não envia o relatório.</p><button type="button" id="apply-summary">Usar sugestão no resumo</button> <button type="button" id="discard-summary" class="secondary">Descartar sugestão</button></div>
+</section>
 <p id="configuration-status" role="status"></p>
 <div class="footer"><p>Confira os dados antes de enviar.</p><button type="submit" id="submit">Enviar relatório <span aria-hidden="true">↗</span></button></div>
 <p id="status" role="status" aria-live="polite"></p>
